@@ -7,6 +7,24 @@ Spring Boot backend that stores BUY/SELL signals, reads live Binance prices, eva
 >
 > The optional infrastructure features are also reference implementations: Redis uses a short-lived price cache without a resilience/fallback policy, the scheduler assumes a single application instance, Hibernate `ddl-auto` manages the schema because migrations were excluded, Docker uses development credentials, Binance integration has no production-grade retry/circuit-breaker/rate-limit strategy, and GitHub Actions performs only a basic Maven verification. Do not use real credentials, funds, or trading decisions with this application.
 
+## Features
+- JWT-based authentication (mocked user for demonstration)
+- RESTful API for managing trading signals
+- BUY and SELL signal validation
+- Live Binance market price integration
+- Redis caching for price lookups
+- Scheduled signal evaluation
+- Automatic target, stop-loss and expiry detection
+- ROI calculation for closed trades
+- Optimistic locking using JPA @Version
+- Bean Validation
+- Global exception handling
+- PostgreSQL persistence
+- Docker Compose support
+- Swagger / OpenAPI documentation
+- GitHub Actions CI pipeline
+- Spotless code formatting
+
 ## Quick start with Docker
 
 Requirements: Docker Desktop.
@@ -60,14 +78,22 @@ Example create request:
   "expiryTime": "2026-06-28T08:00:00Z"
 }
 ```
+## API Summary
+
+| Method | Endpoint | Description | Authentication |
+| :----: | -------- | ----------- |:--------------:|
+| POST | `/api/auth/login` | Generate JWT access token |       No       |
+| POST | `/api/signals` | Create a new trading signal |      Yes       |
+| GET | `/api/signals` | Retrieve all trading signals |      Yes       |
+| GET | `/api/signals/{id}` | Retrieve a trading signal by ID |      Yes       |
+| GET | `/api/signals/{id}/status` | Get the current status of a signal |      Yes       |
+| DELETE | `/api/signals/{id}` | Delete a trading signal |      Yes       |
 
 ## Architecture and workflow
 
 <p align="center">
-  <img src="assets/architecture.jpg" alt="HearMeOut QnA ER Diagram" width="900" />
+  <img src="assets/architecture.jpg" alt="HearMeOut QnA ER Diagram" />
 </p>
-
-The controller accepts validated DTOs and delegates to `TradingSignalService`. The service applies domain rules through `SignalCalculator`, requests prices through the `BinancePriceClient` abstraction, and persists through Spring Data JPA. `WebClientBinancePriceClient` calls Binance at the service boundary; Redis caches each symbol briefly to limit duplicate calls. A scheduler reevaluates OPEN records every 60 seconds. Optimistic locking and terminal-state checks protect state consistency. Exceptions are translated to structured HTTP responses by the global handler. JWT-protected requests are stateless, while the identity source itself remains mocked.
 
 ## Business rules
 
@@ -77,6 +103,43 @@ The controller accepts validated DTOs and delegates to `TradingSignalService`. T
 - TARGET_HIT, STOPLOSS_HIT, and EXPIRED never transition again.
 - ROI is rounded to two decimal places and persisted when a signal closes.
 
+## CI/CD
+
+Every push or pull request triggers the GitHub Actions pipeline.
+
+```text
+Developer Push
+       │
+       ▼
+ GitHub Actions
+       │
+       ├── Checkout Repository
+       ├── Set up Java 21
+       ├── Cache Maven Dependencies
+       ├── Build Project
+       ├── Spotless Formatting Check
+       ├── Run Unit Tests
+       ├── Package Application
+       └── ✅ Build Successful
+```
+
+The pipeline ensures that every commit:
+- Builds successfully
+- Passes all unit tests
+- Follows the project's formatting standards
+- Produces a deployable application artifact
+
 ## Production gaps
 
 Before production use, replace the mocked login with persistent users, hashed stored credentials, role/ownership checks, refresh-token rotation and revocation, and managed secrets. Add explicit database migrations, Binance timeouts/retries/circuit breaking, Redis fallback behavior, distributed scheduler locking or a job queue, rate limiting, observability, audit logs, stronger integration/security tests, and production deployment hardening.
+
+## Planned Improvements
+
+| Area | Planned Enhancement |
+|------|----------------------|
+| Authentication | Replace mocked authentication with persistent users, refresh tokens, and RBAC. |
+| Scalability | Introduce Kafka for event-driven signal processing and distributed scheduling. |
+| Reliability | Add Resilience4j (retry, timeout, circuit breaker) for Binance API calls. |
+| Database | Manage schema changes using Flyway migrations. |
+| Observability | Integrate Prometheus, Grafana, Micrometer, and structured logging. |
+| Deployment | Deploy on AWS with Kubernetes and automated infrastructure provisioning. |
