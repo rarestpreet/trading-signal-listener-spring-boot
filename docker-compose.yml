@@ -1,0 +1,33 @@
+services:
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: trading_signals
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/trading_signals
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis
+      JWT_SECRET: replace-this-compose-secret-with-32-plus-characters
+      APP_PASSWORD: change-me
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

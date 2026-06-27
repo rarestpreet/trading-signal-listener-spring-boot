@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: trading-signal-generator
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/trading_signals}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: create
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 5000
+
+binance:
+  base-url: ${BINANCE_BASE_URL:https://api.binance.com}
+
+signals:
+  evaluation-delay-ms: ${EVALUATION_DELAY_MS:60000}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:replace-this-development-secret-with-32-plus-characters}
+    expiration-ms: 3600000
+
+springdoc:
+  swagger-ui:
+    path: /docs
